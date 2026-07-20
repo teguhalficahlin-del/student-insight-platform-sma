@@ -312,14 +312,14 @@ function showPWAInstallInstructions() {
 // ─── Tab navigation ──────────────────────────────────────────
 const TAB_SHORT = {
     guru: 'Beranda', wali_kelas: 'Wali', bk: 'BK',
-    waka_kesiswaan: 'Kesiswaan', waka_kurikulum: 'Kurikulum',
+    waka_kesiswaan: 'Kesiswaan', waka_kurikulum: 'Kurikulum', waka_humas: 'Humas',
     kepsek: 'Kepsek', ks_admin: 'Admin',
     kasus: 'Pembinaan', jurnal: 'Jurnal', observasi: 'Catatan', forum: 'Forum',
     perangkat_ajar: 'Perangkat',
 };
 const TAB_ICON = {
     guru: 'ti-home', wali_kelas: 'ti-users', bk: 'ti-heart-handshake',
-    waka_kesiswaan: 'ti-school', waka_kurikulum: 'ti-book',
+    waka_kesiswaan: 'ti-school', waka_kurikulum: 'ti-book', waka_humas: 'ti-building-community',
     kepsek: 'ti-chart-line', ks_admin: 'ti-shield-check',
     kasus: 'ti-alert-triangle', jurnal: 'ti-notebook', observasi: 'ti-notes', forum: 'ti-messages',
     perangkat_ajar: 'ti-book-2',
@@ -374,6 +374,7 @@ async function loadTabContent(key) {
             case 'bk':          await initBkTab(); break;
             case 'waka_kesiswaan': await initWakaKesiswaanTab(); break;
             case 'waka_kurikulum': await initWakaKurTab(); break;
+            case 'waka_humas':  await initWakaHumasTab(); break;
             case 'kepsek':      await initKepsekTab(); break;
             case 'ks_admin':    await initKsAdminTab(); break;
             case 'kasus':       await initKasusTab(); break;
@@ -2050,6 +2051,112 @@ function fmtChartLabel(dateStr, byMonth) {
     return byMonth
         ? BULAN_ID[d.getMonth()] + ' ' + d.getFullYear()
         : d.getDate() + ' ' + BULAN_ID[d.getMonth()];
+}
+
+// ─── Tab Waka Humas ──────────────────────────────────────────
+let _humasTabInit = false;
+
+async function initWakaHumasTab() {
+    const body = document.querySelector('#tab-waka_humas .page-body');
+    if (!body) return;
+
+    if (!_humasTabInit) {
+        _humasTabInit = true;
+        body.innerHTML = '<p class="hint">Memuat…</p>';
+
+        const slug = localStorage.getItem('school_slug') || new URLSearchParams(window.location.search).get('school') || '';
+        const base = window.location.origin + window.location.pathname.replace(/\/guru\/[^/]*$/, '');
+        const portalUrl = (path) => slug ? `${base}/${path}?school=${encodeURIComponent(slug)}` : null;
+
+        const siswaUrl       = portalUrl('student/index.html');
+        const ortuUrl        = portalUrl('parent/index.html');
+        const stakeholderUrl = portalUrl('stakeholder/index.html');
+
+        const [siswaRes, alumniRes, ortuRes, stakeRes, monData] = await Promise.allSettled([
+            supabase.from('students').select('student_id', { count: 'exact', head: true }).eq('student_status', 'AKTIF'),
+            supabase.from('students').select('student_id', { count: 'exact', head: true }).eq('student_status', 'ALUMNI'),
+            supabase.from('users').select('user_id', { count: 'exact', head: true }).eq('role_type', 'ORTU').eq('is_active', true),
+            supabase.from('users').select('user_id', { count: 'exact', head: true }).eq('role_type', 'STAKEHOLDER').eq('is_active', true),
+            getKepsekMonitoring('7_hari'),
+        ]);
+
+        const siswaCount = siswaRes.status  === 'fulfilled' ? (siswaRes.value.count  ?? 0) : '—';
+        const alumniCount= alumniRes.status === 'fulfilled' ? (alumniRes.value.count ?? 0) : '—';
+        const ortuCount  = ortuRes.status   === 'fulfilled' ? (ortuRes.value.count   ?? 0) : '—';
+        const stakeCount = stakeRes.status  === 'fulfilled' ? (stakeRes.value.count  ?? 0) : '—';
+
+        const s        = monData.status === 'fulfilled' ? (monData.value?.summary ?? {}) : {};
+        const pctSiswa = s.pct_siswa != null ? s.pct_siswa + '%' : '—';
+        const pctGuru  = s.pct_guru  != null ? s.pct_guru  + '%' : '—';
+
+        const cardStyle = 'background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:16px;text-align:center';
+        const lbl = 'font-size:12px;color:var(--color-text-muted);margin-top:4px';
+        const copyBtn = (url, label) => url
+            ? `<button class="btn btn-secondary btn-sm humas-copy-btn" data-url="${esc(url)}">${label}</button>`
+            : `<button class="btn btn-secondary btn-sm" disabled>${label}</button>`;
+
+        body.innerHTML = `
+            <div class="section-card">
+                <h3 style="margin:0 0 12px">Ringkasan Data Sekolah</h3>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+                    <div style="${cardStyle}">
+                        <div style="font-size:24px;font-weight:600;color:var(--color-primary)">${esc(String(siswaCount))}</div>
+                        <div style="${lbl}">Siswa Aktif</div>
+                    </div>
+                    <div style="${cardStyle}">
+                        <div style="font-size:24px;font-weight:600;color:var(--color-text)">${esc(String(alumniCount))}</div>
+                        <div style="${lbl}">Alumni</div>
+                    </div>
+                    <div style="${cardStyle}">
+                        <div style="font-size:24px;font-weight:600;color:var(--color-text)">${esc(String(ortuCount))}</div>
+                        <div style="${lbl}">Orang Tua Terdaftar</div>
+                    </div>
+                    <div style="${cardStyle}">
+                        <div style="font-size:24px;font-weight:600;color:var(--color-text)">${esc(String(stakeCount))}</div>
+                        <div style="${lbl}">Stakeholder</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h3 style="margin:0 0 12px">Kehadiran 7 Hari Terakhir</h3>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+                    <div style="${cardStyle}">
+                        <div style="font-size:24px;font-weight:600;color:var(--color-success,#22c55e)">${esc(pctSiswa)}</div>
+                        <div style="${lbl}">Kehadiran Siswa</div>
+                    </div>
+                    <div style="${cardStyle}">
+                        <div style="font-size:24px;font-weight:600;color:var(--color-primary)">${esc(pctGuru)}</div>
+                        <div style="${lbl}">Kehadiran Guru di Kelas</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h3 style="margin:0 0 12px">Link Portal</h3>
+                <p style="font-size:13px;color:var(--color-text-muted);margin:0 0 12px">Salin dan bagikan link berikut kepada pihak terkait.</p>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    ${copyBtn(siswaUrl,       'Salin Link Siswa')}
+                    ${copyBtn(ortuUrl,        'Salin Link Orang Tua')}
+                    ${copyBtn(stakeholderUrl, 'Salin Link Stakeholder')}
+                </div>
+                <p id="humas-copy-feedback" style="display:none;margin-top:8px;font-size:13px;color:var(--color-success,#22c55e)">✓ Tersalin ke clipboard!</p>
+            </div>
+        `;
+
+        body.querySelectorAll('.humas-copy-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(btn.dataset.url);
+                    const fb = document.getElementById('humas-copy-feedback');
+                    fb.style.display = 'block';
+                    setTimeout(() => { fb.style.display = 'none'; }, 2000);
+                } catch {
+                    prompt('Salin URL ini:', btn.dataset.url);
+                }
+            });
+        });
+    }
 }
 
 let _ksTabInit = false;

@@ -115,6 +115,7 @@ export function getJabatan(u) {
     if (u.role_type === 'BK'         || u.is_bk)               j.push('bk');
     if (u.role_type === 'WAKA_KESISWAAN' || u.is_waka_kesiswaan) j.push('waka_kesiswaan');
     if (u.role_type === 'WAKA_KURIKULUM' || u.is_waka_kurikulum) j.push('waka_kurikulum');
+    if (u.role_type === 'WAKA_HUMAS'     || u.is_waka_humas)    j.push('waka_humas');
     if (u.role_type === 'KEPSEK'     || u.is_kepsek)            j.push('kepsek');
     return j;
 }
@@ -125,6 +126,7 @@ export function jabatanLabel(key) {
         bk:            'BK',
         waka_kesiswaan:'Waka Kesiswaan',
         waka_kurikulum:'Waka Kurikulum',
+        waka_humas:    'Waka Humas',
         kepsek:        'Kepala Sekolah',
     }[key] ?? key;
 }
