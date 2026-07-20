@@ -46,6 +46,18 @@ function esc(s) {
 }
 
 const TOTAL_STEPS = 12;
+const SKIPPED_STEPS = new Set([8]);
+
+function nextValidStep(current) {
+    let next = current + 1;
+    while (SKIPPED_STEPS.has(next)) next++;
+    return next;
+}
+function prevValidStep(current) {
+    let prev = current - 1;
+    while (SKIPPED_STEPS.has(prev)) prev--;
+    return prev;
+}
 
 const STEP_NAMES = {
     1: 'Profil Sekolah',
@@ -1544,7 +1556,6 @@ const STEP_RENDERERS = {
     5: renderImportStep,
     6: renderImportStep,
     7: renderImportStep,
-    8: renderImportStep,
     9: renderStakeholderStep,
     10: renderScheduleStep,
     11: renderForumAssignmentStep,
@@ -1698,13 +1709,13 @@ nextBtn.addEventListener('click', async () => {
             return;
         }
         markDone(state.currentStep);
-        await goToStep(state.currentStep + 1);
+        await goToStep(nextValidStep(state.currentStep));
     });
 });
 
 prevBtn.addEventListener('click', async () => {
     if (state.currentStep === 1) return;
-    await goToStep(state.currentStep - 1);
+    await goToStep(prevValidStep(state.currentStep));
 });
 
 // Klik item sidebar — hanya ke langkah yang sudah selesai
