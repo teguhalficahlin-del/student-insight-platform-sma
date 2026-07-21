@@ -336,14 +336,11 @@ export async function getForumPosts(classId, academicYear, userId, schoolId, lim
  * Idempoten — duplikat diabaikan via onConflict ignore.
  */
 export async function getMyAchievements(studentId) {
-    const { data, error } = await supabase
-        .from('v_student_portal_achievements')
-        .select('achievement_id, title, description, category, scope, achieved_at, recorded_by_name')
-        .eq('student_id', studentId)
-        .order('achieved_at', { ascending: false })
-        .limit(50);
-    if (error) throw error;
-    return data ?? [];
+    // TODO: Phase 1 SMA — Dashboard Prestasi belum diimplementasi
+    // View v_student_portal_achievements belum ada di DB
+    // Aktifkan kembali setelah view dibuat
+    void studentId;
+    return [];
 }
 
 export async function addForumAck(postId, userId, schoolId) {
