@@ -2074,7 +2074,7 @@ async function initWakaHumasTab() {
 
         const [siswaRes, alumniRes, ortuRes, stakeRes, monData] = await Promise.allSettled([
             supabase.from('students').select('student_id', { count: 'exact', head: true }).eq('student_status', 'AKTIF'),
-            supabase.from('students').select('student_id', { count: 'exact', head: true }).eq('student_status', 'ALUMNI'),
+            supabase.from('students').select('student_id', { count: 'exact', head: true }).eq('student_status', 'LULUS'),
             supabase.from('users').select('user_id', { count: 'exact', head: true }).eq('role_type', 'ORTU').eq('is_active', true),
             supabase.from('users').select('user_id', { count: 'exact', head: true }).eq('role_type', 'STAKEHOLDER').eq('is_active', true),
             getAttendanceFillRate(null, null),
